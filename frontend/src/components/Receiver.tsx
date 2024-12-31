@@ -1,12 +1,13 @@
 import { useEffect, useRef } from "react";
 
 const Receiver = () => {
-    const videoRef = useRef<HTMLVideoElement>(null);
     const mediaStreamRef = useRef<MediaStream | null>(null);
-
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const ownVideoRef = useRef<HTMLVideoElement>(null);
+    
+    let pc: RTCPeerConnection | null = null
     useEffect(() => {
-        const socket = new WebSocket('wss://localhost:8080');
-        let pc: RTCPeerConnection | null = null;
+        const socket = new WebSocket(import.meta.env.VITE_WEBSOCKET_URL)
 
         socket.onopen = () => {
             socket.send(JSON.stringify({ type: 'receiver' }));
@@ -55,12 +56,25 @@ const Receiver = () => {
         };
     }, []);
 
+    async function startSendingVideo() {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     
-
+        if (ownVideoRef.current) {
+            const videoOnlyStream = new MediaStream([stream.getVideoTracks()[0]]);
+            ownVideoRef.current.srcObject = videoOnlyStream;
+        }
+        if (pc) {
+            stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+        }
+    }
     return (
         <div>
             Receiver Page
-            <video ref={videoRef} autoPlay playsInline muted></video>
+            <video ref={videoRef} playsInline></video>
+            <video ref={ownVideoRef} autoPlay playsInline width={200}></video>
+            <button onClick={() => videoRef.current?.play()}>Start Video</button>
+            <button onClick={startSendingVideo}>Send Video</button>
+
         </div>
     );
 };
