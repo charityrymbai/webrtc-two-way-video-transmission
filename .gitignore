@@ -1,3 +1,4 @@
 certificate.pem
 private-key.pem
 node_modules/
+dist/
